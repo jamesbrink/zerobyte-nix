@@ -103,11 +103,12 @@ in
     };
 
     extraReadWritePaths = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
+      type = lib.types.listOf (lib.types.either lib.types.path lib.types.str);
       default = [ ];
       example = [ "/mnt/storage" "/backup" ];
       description = ''
         Additional paths the service can write to.
+        Accepts both string paths and Nix store paths.
         Use this for custom repository locations outside of dataDir.
         Required because ProtectSystem=strict makes the filesystem read-only.
       '';
@@ -124,6 +125,11 @@ in
     };
 
     users.groups.${cfg.group} = lib.mkIf cfg.createUser { };
+
+    # Ensure dataDir exists with correct ownership
+    systemd.tmpfiles.rules = [
+      "d '${cfg.dataDir}' 0750 ${cfg.user} ${cfg.group} -"
+    ];
 
     systemd.services.zerobyte = {
       description = "Zerobyte backup management service";
@@ -148,9 +154,6 @@ in
         Restart = "on-failure";
         RestartSec = 5;
 
-        # State directory (only set when using default dataDir)
-        StateDirectory = lib.mkIf (cfg.dataDir == "/var/lib/zerobyte") "zerobyte";
-        StateDirectoryMode = lib.mkIf (cfg.dataDir == "/var/lib/zerobyte") "0750";
         WorkingDirectory = cfg.dataDir;
 
         # Capabilities
@@ -165,7 +168,6 @@ in
           lib.optional cfg.fuse.enable "CAP_SYS_ADMIN"
           ++ lib.optional (!cfg.protectHome) "CAP_DAC_READ_SEARCH"
           ++ lib.optional (cfg.extraReadWritePaths != [ ]) "CAP_DAC_OVERRIDE";
-        DeviceAllow = lib.mkIf cfg.fuse.enable [ "/dev/fuse rw" ];
 
         # Security hardening
         PrivateTmp = true;
@@ -186,7 +188,16 @@ in
         PrivateMounts = !cfg.fuse.enable;
 
         # Allow write access to data directory
-        ReadWritePaths = [ cfg.dataDir ] ++ cfg.extraReadWritePaths;
+        ReadWritePaths = [ cfg.dataDir ] ++ (map toString cfg.extraReadWritePaths);
+      }
+      # State directory (only set when using default dataDir)
+      // lib.optionalAttrs (cfg.dataDir == "/var/lib/zerobyte") {
+        StateDirectory = "zerobyte";
+        StateDirectoryMode = "0750";
+      }
+      # FUSE device access
+      // lib.optionalAttrs cfg.fuse.enable {
+        DeviceAllow = [ "/dev/fuse rw" ];
       };
     };
 

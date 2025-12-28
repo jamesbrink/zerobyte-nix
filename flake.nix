@@ -81,7 +81,10 @@
       # NixOS integration tests (Linux only)
       checks = builtins.listToAttrs (map (system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ bun2nix.overlays.default ];
+          };
         in
         {
           name = system;
