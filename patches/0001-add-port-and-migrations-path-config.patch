@@ -1,9 +1,9 @@
 diff --git a/app/server/core/__tests__/config.test.ts b/app/server/core/__tests__/config.test.ts
 new file mode 100644
-index 00000000..8dbf0720
+index 0000000..90ace90
 --- /dev/null
 +++ b/app/server/core/__tests__/config.test.ts
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,72 @@
 +import { test, describe, expect } from "bun:test";
 +import { type } from "arktype";
 +
@@ -13,7 +13,6 @@ index 00000000..8dbf0720
 +		NODE_ENV: type.enumerated("development", "production", "test").default("production"),
 +		SERVER_IP: 'string = "localhost"',
 +		SERVER_IDLE_TIMEOUT: 'string.integer.parse = "60"',
-+		RESTIC_HOSTNAME: "string = 'zerobyte'",
 +		PORT: 'string.integer.parse = "4096"',
 +		"MIGRATIONS_PATH?": "string",
 +	}).pipe((s) => ({
@@ -21,7 +20,6 @@ index 00000000..8dbf0720
 +		environment: s.NODE_ENV,
 +		serverIp: s.SERVER_IP,
 +		serverIdleTimeout: s.SERVER_IDLE_TIMEOUT,
-+		resticHostname: s.RESTIC_HOSTNAME,
 +		port: s.PORT,
 +		migrationsPath: s.MIGRATIONS_PATH,
 +	}));
@@ -79,13 +77,13 @@ index 00000000..8dbf0720
 +	});
 +});
 diff --git a/app/server/core/config.ts b/app/server/core/config.ts
-index f4ca6f9e..01bcdbdf 100644
+index 81320db..59408c8 100644
 --- a/app/server/core/config.ts
 +++ b/app/server/core/config.ts
-@@ -6,12 +6,16 @@ const envSchema = type({
+@@ -5,11 +5,15 @@ const envSchema = type({
+ 	NODE_ENV: type.enumerated("development", "production", "test").default("production"),
  	SERVER_IP: 'string = "localhost"',
  	SERVER_IDLE_TIMEOUT: 'string.integer.parse = "60"',
- 	RESTIC_HOSTNAME: "string = 'zerobyte'",
 +	PORT: 'string.integer.parse = "4096"',
 +	"MIGRATIONS_PATH?": "string",
  }).pipe((s) => ({
@@ -93,14 +91,13 @@ index f4ca6f9e..01bcdbdf 100644
  	environment: s.NODE_ENV,
  	serverIp: s.SERVER_IP,
  	serverIdleTimeout: s.SERVER_IDLE_TIMEOUT,
- 	resticHostname: s.RESTIC_HOSTNAME,
 +	port: s.PORT,
 +	migrationsPath: s.MIGRATIONS_PATH,
  }));
  
  const parseConfig = (env: unknown) => {
 diff --git a/app/server/db/db.ts b/app/server/db/db.ts
-index 07109455..9a711032 100644
+index 0710945..9a71103 100644
 --- a/app/server/db/db.ts
 +++ b/app/server/db/db.ts
 @@ -14,9 +14,13 @@ const sqlite = new Database(DATABASE_URL);
@@ -120,7 +117,7 @@ index 07109455..9a711032 100644
  	}
  
 diff --git a/app/server/index.ts b/app/server/index.ts
-index 2027a223..5d1be823 100644
+index 5e290a6..f974526 100644
 --- a/app/server/index.ts
 +++ b/app/server/index.ts
 @@ -18,7 +18,7 @@ await validateRequiredMigrations(REQUIRED_MIGRATIONS);
