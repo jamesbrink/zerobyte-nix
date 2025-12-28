@@ -12,6 +12,10 @@
       url = "github:nicotsx/zerobyte";
       flake = false;
     };
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -21,6 +25,7 @@
       flake-utils,
       bun2nix,
       zerobyte-src,
+      treefmt-nix,
     }:
     let
       # Systems for packages and devShells (cross-platform)
@@ -60,6 +65,12 @@
           bun2nixPkgs = bun2nix.packages.${system};
         };
 
+        # Configure treefmt for nix formatting
+        treefmtEval = treefmt-nix.lib.evalModule pkgs {
+          projectRootFile = "flake.nix";
+          programs.nixfmt.enable = true;
+        };
+
       in
       {
         packages = {
@@ -73,8 +84,11 @@
           bun2nixPkgs = bun2nix.packages.${system};
         };
 
-        # Nix formatter
-        formatter = pkgs.nixfmt-rfc-style;
+        # Nix formatter (via treefmt)
+        formatter = treefmtEval.config.build.wrapper;
+
+        # Formatting check
+        checks.formatting = treefmtEval.config.build.check self;
       }
     )
     // {
@@ -90,7 +104,7 @@
       # nix-darwin module (macOS)
       darwinModules.default = import ./nix/modules/darwin.nix { inherit self; };
 
-      # Checks: formatting (all systems) + integration tests (Linux only)
+      # NixOS integration tests (Linux only)
       checks = builtins.listToAttrs (
         map (
           system:
@@ -99,30 +113,16 @@
               inherit system;
               overlays = [ bun2nix.overlays.default ];
             };
-            isLinux = builtins.elem system linuxSystems;
           in
           {
             name = system;
             value = {
-              # Formatting check for all systems
-              formatting = pkgs.runCommand "check-formatting" { } ''
-                ${pkgs.nixfmt-rfc-style}/bin/nixfmt --check ${self}/*.nix ${self}/nix/**/*.nix
-                touch $out
-              '';
-            }
-            // (
-              if isLinux then
-                {
-                  # Integration test (Linux only)
-                  integration = import ./nix/tests/integration.nix {
-                    inherit pkgs self;
-                  };
-                }
-              else
-                { }
-            );
+              integration = import ./nix/tests/integration.nix {
+                inherit pkgs self;
+              };
+            };
           }
-        ) allSystems
+        ) linuxSystems
       );
     };
 }
