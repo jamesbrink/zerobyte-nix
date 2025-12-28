@@ -4,23 +4,25 @@
 pkgs.testers.nixosTest {
   name = "zerobyte-integration";
 
-  nodes.machine = { config, pkgs, ... }: {
-    imports = [ self.nixosModules.default ];
+  nodes.machine =
+    { config, pkgs, ... }:
+    {
+      imports = [ self.nixosModules.default ];
 
-    services.zerobyte = {
-      enable = true;
-      openFirewall = true;
+      services.zerobyte = {
+        enable = true;
+        openFirewall = true;
+      };
+
+      # Add curl for healthcheck test
+      environment.systemPackages = [ pkgs.curl ];
+
+      # Ensure the test VM has enough resources
+      virtualisation = {
+        memorySize = 1024;
+        diskSize = 2048;
+      };
     };
-
-    # Add curl for healthcheck test
-    environment.systemPackages = [ pkgs.curl ];
-
-    # Ensure the test VM has enough resources
-    virtualisation = {
-      memorySize = 1024;
-      diskSize = 2048;
-    };
-  };
 
   testScript = ''
     machine.start()

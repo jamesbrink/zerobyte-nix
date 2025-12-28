@@ -1,9 +1,18 @@
 # Zerobyte - Self-hosted backup automation and management
 # https://github.com/nicotsx/zerobyte
-{ pkgs, system, lib, config, shoutrrr }:
+{
+  pkgs,
+  system,
+  lib,
+  config,
+  shoutrrr,
+}:
 
 let
-  isLinux = builtins.elem system [ "x86_64-linux" "aarch64-linux" ];
+  isLinux = builtins.elem system [
+    "x86_64-linux"
+    "aarch64-linux"
+  ];
 
   # Apply patches to upstream source
   patchedSrc = pkgs.applyPatches {
@@ -70,15 +79,20 @@ pkgs.stdenv.mkDerivation {
     makeWrapper ${pkgs.bun}/bin/bun $out/bin/zerobyte \
       --chdir $out/lib/zerobyte \
       --add-flags "dist/server/index.js" \
-      --prefix PATH : ${lib.makeBinPath ([
-        pkgs.restic
-        pkgs.rclone
-        shoutrrr
-        pkgs.openssh
-      ] ++ lib.optionals isLinux [
-        pkgs.fuse3
-        pkgs.davfs2
-      ])} \
+      --prefix PATH : ${
+        lib.makeBinPath (
+          [
+            pkgs.restic
+            pkgs.rclone
+            shoutrrr
+            pkgs.openssh
+          ]
+          ++ lib.optionals isLinux [
+            pkgs.fuse3
+            pkgs.davfs2
+          ]
+        )
+      } \
       --set NODE_ENV "production"
 
     runHook postInstall

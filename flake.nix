@@ -14,7 +14,14 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, bun2nix, zerobyte-src }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      bun2nix,
+      zerobyte-src,
+    }:
     let
       # Systems for packages and devShells (cross-platform)
       allSystems = [
@@ -38,7 +45,8 @@
       };
 
     in
-    flake-utils.lib.eachSystem allSystems (system:
+    flake-utils.lib.eachSystem allSystems (
+      system:
       let
         pkgs = import nixpkgs {
           inherit system;
@@ -64,8 +72,12 @@
           inherit (packages) shoutrrr;
           bun2nixPkgs = bun2nix.packages.${system};
         };
+
+        # Nix formatter
+        formatter = pkgs.nixfmt-rfc-style;
       }
-    ) // {
+    )
+    // {
       # Overlay for use in other flakes
       overlays.default = final: prev: {
         zerobyte = self.packages.${final.system}.zerobyte;
@@ -78,22 +90,39 @@
       # nix-darwin module (macOS)
       darwinModules.default = import ./nix/modules/darwin.nix { inherit self; };
 
-      # NixOS integration tests (Linux only)
-      checks = builtins.listToAttrs (map (system:
-        let
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = [ bun2nix.overlays.default ];
-          };
-        in
-        {
-          name = system;
-          value = {
-            integration = import ./nix/tests/integration.nix {
-              inherit pkgs self;
+      # Checks: formatting (all systems) + integration tests (Linux only)
+      checks = builtins.listToAttrs (
+        map (
+          system:
+          let
+            pkgs = import nixpkgs {
+              inherit system;
+              overlays = [ bun2nix.overlays.default ];
             };
-          };
-        }
-      ) linuxSystems);
+            isLinux = builtins.elem system linuxSystems;
+          in
+          {
+            name = system;
+            value = {
+              # Formatting check for all systems
+              formatting = pkgs.runCommand "check-formatting" { } ''
+                ${pkgs.nixfmt-rfc-style}/bin/nixfmt --check ${self}/*.nix ${self}/nix/**/*.nix
+                touch $out
+              '';
+            }
+            // (
+              if isLinux then
+                {
+                  # Integration test (Linux only)
+                  integration = import ./nix/tests/integration.nix {
+                    inherit pkgs self;
+                  };
+                }
+              else
+                { }
+            );
+          }
+        ) allSystems
+      );
     };
 }

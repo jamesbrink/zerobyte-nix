@@ -1,7 +1,12 @@
 # NixOS module for Zerobyte backup management service
 { self }:
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.services.zerobyte;
@@ -105,7 +110,10 @@ in
     extraReadWritePaths = lib.mkOption {
       type = lib.types.listOf (lib.types.either lib.types.path lib.types.str);
       default = [ ];
-      example = [ "/mnt/storage" "/backup" ];
+      example = [
+        "/mnt/storage"
+        "/backup"
+      ];
       description = ''
         Additional paths the service can write to.
         Accepts both string paths and Nix store paths.
@@ -144,7 +152,8 @@ in
         DATABASE_URL = "${cfg.dataDir}/data/zerobyte.db";
         MIGRATIONS_PATH = "${cfg.package}/lib/zerobyte/drizzle";
         TZ = cfg.timezone;
-      } // cfg.environment;
+      }
+      // cfg.environment;
 
       serviceConfig = {
         Type = "simple";
@@ -178,7 +187,11 @@ in
         ProtectKernelTunables = true;
         ProtectKernelModules = true;
         ProtectControlGroups = true;
-        RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+        ];
         RestrictNamespaces = !cfg.fuse.enable;
         LockPersonality = true;
         MemoryDenyWriteExecute = false; # Required for bun/V8

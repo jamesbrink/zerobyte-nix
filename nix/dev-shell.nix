@@ -1,5 +1,10 @@
 # Development shell for zerobyte
-{ pkgs, system, shoutrrr, bun2nixPkgs }:
+{
+  pkgs,
+  system,
+  shoutrrr,
+  bun2nixPkgs,
+}:
 
 let
   # Menu script

@@ -1,5 +1,11 @@
 # Package set for zerobyte and dependencies
-{ pkgs, system, lib, config, bun2nixPkgs }:
+{
+  pkgs,
+  system,
+  lib,
+  config,
+  bun2nixPkgs,
+}:
 
 let
   shoutrrr = import ./shoutrrr.nix {
@@ -7,7 +13,13 @@ let
   };
 
   zerobyte = import ./zerobyte.nix {
-    inherit pkgs system lib config shoutrrr;
+    inherit
+      pkgs
+      system
+      lib
+      config
+      shoutrrr
+      ;
   };
 
 in

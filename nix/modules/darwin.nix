@@ -7,7 +7,12 @@
 # changes to handle TCC permission grants via System Preferences.
 { self }:
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.services.zerobyte;
@@ -83,7 +88,8 @@ in
           DATABASE_URL = "${cfg.dataDir}/data/zerobyte.db";
           MIGRATIONS_PATH = "${cfg.package}/lib/zerobyte/drizzle";
           TZ = cfg.timezone;
-        } // cfg.environment;
+        }
+        // cfg.environment;
 
         StandardOutPath = "/var/log/zerobyte.log";
         StandardErrorPath = "/var/log/zerobyte.error.log";

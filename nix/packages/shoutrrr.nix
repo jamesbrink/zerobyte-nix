@@ -1,6 +1,10 @@
 # Shoutrrr - Notification library and CLI for various services
 # https://github.com/nicholas-fedor/shoutrrr
-{ pkgs, system, lib }:
+{
+  pkgs,
+  system,
+  lib,
+}:
 
 let
   version = "0.13.1";
@@ -21,7 +25,10 @@ let
     aarch64-darwin = "macOS_arm64v8";
   };
 
-  isLinux = builtins.elem system [ "x86_64-linux" "aarch64-linux" ];
+  isLinux = builtins.elem system [
+    "x86_64-linux"
+    "aarch64-linux"
+  ];
 
 in
 pkgs.stdenv.mkDerivation {
