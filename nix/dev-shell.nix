@@ -30,14 +30,22 @@ let
 
   # Update bun.nix script
   updateBunNixScript = pkgs.writeShellScriptBin "update-bun-nix" ''
-    echo -e "\033[1;34m==>\033[0m Fetching upstream zerobyte..."
+    # Extract version from flake.nix config
+    VERSION=$(${pkgs.gnugrep}/bin/grep -oP 'version = "\K[^"]+' flake.nix | head -1)
+    if [ -z "$VERSION" ]; then
+      echo -e "\033[1;31m==>\033[0m Could not extract version from flake.nix"
+      exit 1
+    fi
+    TAG="v$VERSION"
+
+    echo -e "\033[1;34m==>\033[0m Fetching zerobyte $TAG..."
     tmpdir=$(mktemp -d)
-    ${pkgs.git}/bin/git clone --depth 1 https://github.com/nicotsx/zerobyte "$tmpdir" || exit 1
+    ${pkgs.git}/bin/git clone --depth 1 --branch "$TAG" https://github.com/nicotsx/zerobyte "$tmpdir" || exit 1
     echo -e "\033[1;34m==>\033[0m Generating bun.nix..."
     (cd "$tmpdir" && ${bun2nixPkgs.bun2nix}/bin/bun2nix -o "$(pwd)/bun.nix") || exit 1
     cp "$tmpdir/bun.nix" ./bun.nix
     rm -rf "$tmpdir"
-    echo -e "\033[1;32m==>\033[0m Updated bun.nix from upstream"
+    echo -e "\033[1;32m==>\033[0m Updated bun.nix for $TAG"
     echo -e "\033[0;90m    Commit: git add bun.nix && git commit -m 'chore: update bun.nix'\033[0m"
   '';
 

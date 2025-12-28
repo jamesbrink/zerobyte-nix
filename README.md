@@ -85,23 +85,27 @@ nix build .#checks.x86_64-linux.integration
 
 ## Updating
 
-When upstream Zerobyte updates, regenerate `bun.nix` to match:
+This flake follows upstream releases (tags). To update to a new version:
 
 ```bash
-# Update flake inputs
-nix flake update
+# 1. Update version in flake.nix (both zerobyte-src URL and config.version)
+#    zerobyte-src.url = "github:nicotsx/zerobyte/v0.21.0"
+#    version = "0.21.0"
 
-# Regenerate bun.nix from upstream (in devshell)
+# 2. Update flake.lock
+nix flake update zerobyte-src
+
+# 3. Regenerate bun.nix (in devshell)
 nix develop
 update-bun-nix
 
-# Test and commit
+# 4. Test and commit
 nix build
-git add flake.lock bun.nix
-git commit -m "chore: update to latest upstream"
+git add flake.nix flake.lock bun.nix
+git commit -m "chore: update to v0.21.0"
 ```
 
-The `bun.nix` file must always match the upstream source referenced in `flake.lock`.
+The `bun.nix` file must always match the upstream release referenced in `flake.lock`.
 
 ## Patches
 

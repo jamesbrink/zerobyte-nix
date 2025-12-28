@@ -9,7 +9,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     zerobyte-src = {
-      url = "github:nicotsx/zerobyte";
+      url = "github:nicotsx/zerobyte/v0.20.0";
       flake = false;
     };
     treefmt-nix = {
@@ -45,6 +45,7 @@
       # Shared configuration
       config = {
         inherit zerobyte-src;
+        version = "0.20.0"; # Must match zerobyte-src tag
         patches = [ ./patches/0001-add-port-and-migrations-path-config.patch ];
         bunNix = ./bun.nix;
       };

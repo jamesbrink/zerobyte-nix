@@ -21,13 +21,8 @@ let
     patches = config.patches;
   };
 
-  # Version from the source (read directly to avoid IFD with patched source)
-  # Since the patch doesn't modify package.json, we read from the original source
-  version =
-    let
-      packageJson = builtins.fromJSON (builtins.readFile "${config.zerobyte-src}/package.json");
-    in
-    packageJson.version or "0.0.0-git";
+  # Version from flake config (must match zerobyte-src tag)
+  inherit (config) version;
 
 in
 pkgs.stdenv.mkDerivation {
