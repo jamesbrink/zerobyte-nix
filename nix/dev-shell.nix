@@ -29,13 +29,25 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    echo "Zerobyte development environment"
+    echo "Zerobyte-nix development environment"
     echo "  bun:      $(bun --version)"
     echo "  node:     $(node --version)"
     echo "  restic:   $(restic version | head -1)"
-    echo "  rclone:   $(rclone version | head -1)"
     echo ""
-    echo "To update bun.nix after changing dependencies:"
-    echo "  bun2nix -o bun.nix"
+    echo "Commands:"
+    echo "  update-bun-nix    Regenerate bun.nix from upstream"
+    echo "  nix flake update  Update all flake inputs"
+
+    update-bun-nix() {
+      echo "Fetching upstream zerobyte..."
+      local tmpdir=$(mktemp -d)
+      git clone --depth 1 https://github.com/nicotsx/zerobyte "$tmpdir" || return 1
+      echo "Generating bun.nix..."
+      (cd "$tmpdir" && bun2nix -o "$(pwd)/bun.nix") || return 1
+      cp "$tmpdir/bun.nix" ./bun.nix
+      rm -rf "$tmpdir"
+      echo "Updated bun.nix from upstream"
+      echo "Don't forget to commit: git add bun.nix && git commit -m 'chore: update bun.nix from upstream'"
+    }
   '';
 }
