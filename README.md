@@ -10,7 +10,6 @@ Nix flake for [Zerobyte](https://github.com/nicotsx/zerobyte) - a self-hosted ba
 
 - Pure Nix flake packaging of Zerobyte
 - NixOS module with systemd service
-- nix-darwin module with launchd service
 - Includes [shoutrrr](https://github.com/containrrr/shoutrrr) for notifications
 - FUSE mount support on Linux
 
@@ -19,7 +18,7 @@ Nix flake for [Zerobyte](https://github.com/nicotsx/zerobyte) - a self-hosted ba
 ### Run directly
 
 ```bash
-nix run github:utensils/zerobyte-nix
+nix run github:jamesbrink/zerobyte-nix
 ```
 
 ### Add to your flake
@@ -28,7 +27,7 @@ nix run github:utensils/zerobyte-nix
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    zerobyte-nix.url = "github:utensils/zerobyte-nix";
+    zerobyte-nix.url = "github:jamesbrink/zerobyte-nix";
   };
 
   outputs = { self, nixpkgs, zerobyte-nix, ... }: {
@@ -66,8 +65,10 @@ nix run github:utensils/zerobyte-nix
 | `dataDir` | path | `/var/lib/zerobyte` | Data directory |
 | `user` | string | `"zerobyte"` | User to run as |
 | `group` | string | `"zerobyte"` | Group to run as |
-| `openFirewall` | bool | `false` | Open firewall port (NixOS only) |
-| `enableFuse` | bool | `true` | Enable FUSE support (Linux only) |
+| `openFirewall` | bool | `false` | Open firewall port |
+| `fuse.enable` | bool | `true` | Enable FUSE support (Linux only) |
+| `protectHome` | bool | `true` | Enable ProtectHome hardening |
+| `extraReadWritePaths` | list | `[]` | Additional writable paths |
 
 ## Development
 
@@ -82,9 +83,29 @@ nix build
 nix build .#checks.x86_64-linux.integration
 ```
 
+## Updating
+
+When upstream Zerobyte updates, regenerate `bun.nix` to match:
+
+```bash
+# Update flake inputs
+nix flake update
+
+# Regenerate bun.nix from upstream (in devshell)
+nix develop
+update-bun-nix
+
+# Test and commit
+nix build
+git add flake.lock bun.nix
+git commit -m "chore: update to latest upstream"
+```
+
+The `bun.nix` file must always match the upstream source referenced in `flake.lock`.
+
 ## Patches
 
-This flake includes patches from upstream PRs that haven't been merged yet:
+This flake applies patches from upstream PRs not yet merged:
 
 - [PR #253](https://github.com/nicotsx/zerobyte/pull/253) - Adds configurable `PORT` and `MIGRATIONS_PATH` environment variables
 
