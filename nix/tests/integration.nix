@@ -12,6 +12,9 @@ pkgs.testers.nixosTest {
       openFirewall = true;
     };
 
+    # Add curl for healthcheck test
+    environment.systemPackages = [ pkgs.curl ];
+
     # Ensure the test VM has enough resources
     virtualisation = {
       memorySize = 1024;

@@ -148,9 +148,9 @@ in
         Restart = "on-failure";
         RestartSec = 5;
 
-        # State directory
-        StateDirectory = "zerobyte";
-        StateDirectoryMode = "0750";
+        # State directory (only set when using default dataDir)
+        StateDirectory = lib.mkIf (cfg.dataDir == "/var/lib/zerobyte") "zerobyte";
+        StateDirectoryMode = lib.mkIf (cfg.dataDir == "/var/lib/zerobyte") "0750";
         WorkingDirectory = cfg.dataDir;
 
         # Capabilities

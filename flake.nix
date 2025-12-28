@@ -42,7 +42,6 @@
       let
         pkgs = import nixpkgs {
           inherit system;
-          config.allowUnfree = true;
           overlays = [ bun2nix.overlays.default ];
         };
 
