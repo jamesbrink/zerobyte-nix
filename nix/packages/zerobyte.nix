@@ -37,6 +37,7 @@ pkgs.stdenv.mkDerivation {
   ];
 
   # Fetch bun dependencies using the lockfile from this flake
+  # bun2nix.hook populates node_modules from these pre-fetched deps (fully offline)
   bunDeps = pkgs.bun2nix.fetchBunDeps {
     bunNix = config.bunNix;
   };
@@ -45,6 +46,10 @@ pkgs.stdenv.mkDerivation {
     runHook preBuild
 
     export HOME=$(mktemp -d)
+
+    # Ensure bun doesn't try to install/fetch anything (deps provided by bun2nix.hook)
+    # Network is blocked by Nix sandbox, but this makes failures clearer
+    export BUN_INSTALL_BIN=$HOME/.bun/bin
 
     # Build the application (react-router build)
     bun run build

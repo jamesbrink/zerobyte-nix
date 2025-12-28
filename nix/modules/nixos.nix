@@ -134,9 +134,11 @@ in
 
     users.groups.${cfg.group} = lib.mkIf cfg.createUser { };
 
-    # Ensure dataDir exists with correct ownership
+    # Ensure dataDir and data subdir exist with correct ownership
+    # Note: Zerobyte also creates data/ via fs.mkdir, but tmpfiles ensures correct ownership
     systemd.tmpfiles.rules = [
-      "d '${cfg.dataDir}' 0750 ${cfg.user} ${cfg.group} -"
+      "d ${cfg.dataDir} 0750 ${cfg.user} ${cfg.group} -"
+      "d ${cfg.dataDir}/data 0750 ${cfg.user} ${cfg.group} -"
     ];
 
     systemd.services.zerobyte = {

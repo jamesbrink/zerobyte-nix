@@ -43,9 +43,13 @@
       ];
 
       # Shared configuration
+      # NOTE: When updating zerobyte, change BOTH:
+      #   1. zerobyte-src URL tag (above)
+      #   2. version string (below)
+      # Then run: nix flake update zerobyte-src && nix develop -c update-bun-nix
       config = {
         inherit zerobyte-src;
-        version = "0.20.0"; # Must match zerobyte-src tag
+        version = "0.20.0";
         patches = [ ./patches/0001-add-port-and-migrations-path-config.patch ];
         bunNix = ./bun.nix;
       };
@@ -107,16 +111,19 @@
       }
     )
     // {
-      # Overlay for use in other flakes (guarded for supported systems)
+      # Overlay for use in other flakes (only adds attrs on supported systems)
       overlays.default =
         final: prev:
         let
-          packages = self.packages.${final.system} or { };
+          packages = self.packages.${final.system} or null;
         in
-        {
-          zerobyte = packages.zerobyte or null;
-          shoutrrr = packages.shoutrrr or null;
-        };
+        # Only add packages if system is supported (avoids null violating types.package)
+        if packages != null then
+          {
+            inherit (packages) zerobyte shoutrrr;
+          }
+        else
+          { };
 
       # NixOS module
       nixosModules.default = import ./nix/modules/nixos.nix { inherit self; };
