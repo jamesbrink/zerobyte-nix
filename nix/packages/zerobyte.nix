@@ -87,7 +87,7 @@ pkgs.stdenv.mkDerivation {
   meta = with lib; {
     description = "Self-hosted backup automation and management";
     homepage = "https://github.com/nicotsx/zerobyte";
-    license = licenses.mit;
+    license = licenses.agpl3Plus;
     platforms = platforms.unix;
     mainProgram = "zerobyte";
   };

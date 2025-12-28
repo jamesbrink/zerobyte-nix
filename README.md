@@ -1,0 +1,101 @@
+# zerobyte-nix
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Nix Flake](https://img.shields.io/badge/Nix-Flake-blue?logo=nixos&logoColor=white)](https://nixos.wiki/wiki/Flakes)
+[![NixOS](https://img.shields.io/badge/NixOS-Module-5277C3?logo=nixos&logoColor=white)](https://nixos.org/)
+
+Nix flake for [Zerobyte](https://github.com/nicotsx/zerobyte) - a self-hosted backup automation and management application powered by [Restic](https://restic.net/).
+
+## Features
+
+- Pure Nix flake packaging of Zerobyte
+- NixOS module with systemd service
+- nix-darwin module with launchd service
+- Includes [shoutrrr](https://github.com/containrrr/shoutrrr) for notifications
+- FUSE mount support on Linux
+
+## Usage
+
+### Run directly
+
+```bash
+nix run github:utensils/zerobyte-nix
+```
+
+### Add to your flake
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    zerobyte-nix.url = "github:utensils/zerobyte-nix";
+  };
+
+  outputs = { self, nixpkgs, zerobyte-nix, ... }: {
+    nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        zerobyte-nix.nixosModules.default
+        {
+          services.zerobyte = {
+            enable = true;
+            port = 4096;
+            openFirewall = true;
+          };
+        }
+      ];
+    };
+  };
+}
+```
+
+### Use the overlay
+
+```nix
+{
+  nixpkgs.overlays = [ zerobyte-nix.overlays.default ];
+}
+```
+
+## Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enable` | bool | `false` | Enable Zerobyte service |
+| `port` | int | `4096` | Port to listen on |
+| `dataDir` | path | `/var/lib/zerobyte` | Data directory |
+| `user` | string | `"zerobyte"` | User to run as |
+| `group` | string | `"zerobyte"` | Group to run as |
+| `openFirewall` | bool | `false` | Open firewall port (NixOS only) |
+| `enableFuse` | bool | `true` | Enable FUSE support (Linux only) |
+
+## Development
+
+```bash
+# Enter development shell
+nix develop
+
+# Build the package
+nix build
+
+# Run integration tests (NixOS only)
+nix build .#checks.x86_64-linux.integration
+```
+
+## Patches
+
+This flake includes patches from upstream PRs that haven't been merged yet:
+
+- [PR #253](https://github.com/nicotsx/zerobyte/pull/253) - Adds configurable `PORT` and `MIGRATIONS_PATH` environment variables
+
+## License
+
+This Nix flake packaging is licensed under the MIT License - see [LICENSE](LICENSE) for details.
+
+Zerobyte itself is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](https://github.com/nicotsx/zerobyte/blob/main/LICENSE).
+
+## Credits
+
+- [Zerobyte](https://github.com/nicotsx/zerobyte) by nicotsx
+- [Restic](https://restic.net/) backup program
+- [shoutrrr](https://github.com/containrrr/shoutrrr) notification library
