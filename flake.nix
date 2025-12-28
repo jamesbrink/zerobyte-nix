@@ -71,6 +71,8 @@
           programs.nixfmt.enable = true;
         };
 
+        isLinux = builtins.elem system linuxSystems;
+
       in
       {
         packages = {
@@ -87,42 +89,38 @@
         # Nix formatter (via treefmt)
         formatter = treefmtEval.config.build.wrapper;
 
-        # Formatting check
-        checks.formatting = treefmtEval.config.build.check self;
+        # Checks: formatting (all systems) + integration (Linux only)
+        checks = {
+          formatting = treefmtEval.config.build.check self;
+        }
+        // (
+          if isLinux then
+            {
+              integration = import ./nix/tests/integration.nix {
+                inherit pkgs self;
+              };
+            }
+          else
+            { }
+        );
       }
     )
     // {
-      # Overlay for use in other flakes
-      overlays.default = final: prev: {
-        zerobyte = self.packages.${final.system}.zerobyte;
-        shoutrrr = self.packages.${final.system}.shoutrrr;
-      };
+      # Overlay for use in other flakes (guarded for supported systems)
+      overlays.default =
+        final: prev:
+        let
+          packages = self.packages.${final.system} or { };
+        in
+        {
+          zerobyte = packages.zerobyte or null;
+          shoutrrr = packages.shoutrrr or null;
+        };
 
       # NixOS module
       nixosModules.default = import ./nix/modules/nixos.nix { inherit self; };
 
       # nix-darwin module (macOS)
       darwinModules.default = import ./nix/modules/darwin.nix { inherit self; };
-
-      # NixOS integration tests (Linux only)
-      checks = builtins.listToAttrs (
-        map (
-          system:
-          let
-            pkgs = import nixpkgs {
-              inherit system;
-              overlays = [ bun2nix.overlays.default ];
-            };
-          in
-          {
-            name = system;
-            value = {
-              integration = import ./nix/tests/integration.nix {
-                inherit pkgs self;
-              };
-            };
-          }
-        ) linuxSystems
-      );
     };
 }
