@@ -1,8 +1,48 @@
 # Development shell for zerobyte
 { pkgs, system, shoutrrr, bun2nixPkgs }:
 
+let
+  # Menu script
+  menuScript = pkgs.writeShellScriptBin "menu" ''
+    echo ""
+    echo -e "\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+    echo -e "\033[1;37m  zerobyte-nix\033[0m \033[0;90m- Nix flake development environment\033[0m"
+    echo -e "\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+    echo ""
+    echo -e "\033[0;90m  Tools:\033[0m"
+    echo -e "    bun       \033[0;32m$(${pkgs.bun}/bin/bun --version)\033[0m"
+    echo -e "    node      \033[0;32m$(${pkgs.nodejs}/bin/node --version)\033[0m"
+    echo -e "    restic    \033[0;32m$(${pkgs.restic}/bin/restic version 2>/dev/null | head -1 | awk '{print $2}')\033[0m"
+    echo ""
+    echo -e "\033[0;90m  Commands:\033[0m"
+    echo -e "    \033[1;33mupdate-bun-nix\033[0m     Regenerate bun.nix from upstream"
+    echo -e "    \033[1;33mnix flake update\033[0m   Update all flake inputs"
+    echo -e "    \033[1;33mmenu\033[0m               Show this menu"
+    echo ""
+    echo -e "\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+    echo ""
+  '';
+
+  # Update bun.nix script
+  updateBunNixScript = pkgs.writeShellScriptBin "update-bun-nix" ''
+    echo -e "\033[1;34m==>\033[0m Fetching upstream zerobyte..."
+    tmpdir=$(mktemp -d)
+    ${pkgs.git}/bin/git clone --depth 1 https://github.com/nicotsx/zerobyte "$tmpdir" || exit 1
+    echo -e "\033[1;34m==>\033[0m Generating bun.nix..."
+    (cd "$tmpdir" && ${bun2nixPkgs.bun2nix}/bin/bun2nix -o "$(pwd)/bun.nix") || exit 1
+    cp "$tmpdir/bun.nix" ./bun.nix
+    rm -rf "$tmpdir"
+    echo -e "\033[1;32m==>\033[0m Updated bun.nix from upstream"
+    echo -e "\033[0;90m    Commit: git add bun.nix && git commit -m 'chore: update bun.nix'\033[0m"
+  '';
+
+in
 pkgs.mkShell {
   buildInputs = [
+    # Dev shell commands
+    menuScript
+    updateBunNixScript
+
     # JavaScript runtime and package manager
     pkgs.bun
     pkgs.nodejs
@@ -29,25 +69,6 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    echo "Zerobyte-nix development environment"
-    echo "  bun:      $(bun --version)"
-    echo "  node:     $(node --version)"
-    echo "  restic:   $(restic version | head -1)"
-    echo ""
-    echo "Commands:"
-    echo "  update-bun-nix    Regenerate bun.nix from upstream"
-    echo "  nix flake update  Update all flake inputs"
-
-    update-bun-nix() {
-      echo "Fetching upstream zerobyte..."
-      local tmpdir=$(mktemp -d)
-      git clone --depth 1 https://github.com/nicotsx/zerobyte "$tmpdir" || return 1
-      echo "Generating bun.nix..."
-      (cd "$tmpdir" && bun2nix -o "$(pwd)/bun.nix") || return 1
-      cp "$tmpdir/bun.nix" ./bun.nix
-      rm -rf "$tmpdir"
-      echo "Updated bun.nix from upstream"
-      echo "Don't forget to commit: git add bun.nix && git commit -m 'chore: update bun.nix from upstream'"
-    }
+    menu
   '';
 }
